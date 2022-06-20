@@ -8,6 +8,7 @@ authors = ["Ehsan <barkhordar.me@gmail.com>"]
 python = "^3.8"
 pytest = "^7.1.2"
 pytest-mock = "^3.7.0"
+Flask = "^2.1.2"
 
 [tool.poetry.dev-dependencies]
 
