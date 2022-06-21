@@ -2,7 +2,7 @@
 name = "my-data-store"
 version = "0.1.0"
 description = "Store and retrieve arbitrary data in multiple formats & destinations"
-readme = "README.rst"
+readme = "README.md"
 authors = ["Ehsan <barkhordar.me@gmail.com>"]
 classifiers = [
     "License :: OSI Approved :: MIT License",
@@ -13,6 +13,7 @@ classifiers = [
 [tool.poetry.dependencies]
 python = "^3.8"
 Flask = "^2.1.2"
+dicttoxml = "^1.7.4"
 
 
 [tool.poetry.dev-dependencies]
