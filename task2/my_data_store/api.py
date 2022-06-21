@@ -1,4 +1,3 @@
-import json
 import threading
 
 from flask import Flask, request
@@ -27,7 +26,11 @@ def insert_data():
     # data = CustomDataStructure(**request_data)
 
     sem.acquire()
-    storage = InsertRecord(data=request_data, file_format=Settings.FORMAT, destination=Settings.DESTINATION)
+    storage = InsertRecord(
+        data=request_data,
+        file_format=Settings.FORMAT,
+        destination=Settings.DESTINATION
+    )
     storage.save()
     sem.release()
 
