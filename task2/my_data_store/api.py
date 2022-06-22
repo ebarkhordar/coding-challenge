@@ -1,5 +1,5 @@
-import io
-import ftplib
+from ftplib import FTP
+from pathlib import Path
 import json
 import dicttoxml
 from threading import Lock
@@ -19,11 +19,10 @@ class InsertRecord:
         if self.destination == 'local drive':
             self.save_json(data, file_name, file_name)
         elif self.destination == 'ftp':
-            session = ftplib.FTP(Settings.FTP_HOSTNAME, user=Settings.FTP_USERNAME, passwd=Settings.FTP_PASSWORD)
-            file = open(file_name, 'rb')  # file to send
-            session.storbinary('STOR kitten.json', file)  # send the file
-            file.close()  # close file and FTP
-            session.quit()
+            file_path = Path('file.json')
+            ftp_conf = (Settings.FTP_HOSTNAME, Settings.FTP_USERNAME, Settings.FTP_PASSWORD)
+            with FTP(*ftp_conf) as ftp, open(file_name, 'rb') as file:
+                ftp.storbinary(f"STOR {file_name}", file)
 
     def get_file(self):
         if self.file_format == 'json':
