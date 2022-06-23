@@ -1,24 +1,62 @@
+import io
 import json
+from ftplib import FTP
 from pathlib import Path
 from threading import Lock
-from typing import List
+from typing import List, Union
 from dicttoxml import dicttoxml
 
-from my_data_store.utils import dict_to_binary, sampling, xml_to_json_records
+from my_data_store.settings import Settings
+from my_data_store.utils import dict_to_binary, sampling, xml_to_json_records, Reader
+
+
+class FTPHandler:
+    def __init__(self, file_path):
+        self.file_path = file_path
+        self.ftp_conf = (Settings.FTP_HOSTNAME, Settings.FTP_USERNAME, Settings.FTP_PASSWORD)
+        self.ftp = FTP(*self.ftp_conf)
+
+    def read_binary(self):
+        r = Reader()
+        self.ftp.retrbinary(f'RETR {self.file_path}', r)
+        res_binary = r.data
+        return res_binary
+
+    def write_binary(self, data: bytes):
+        self.ftp.storbinary(f"STOR {self.file_path}", io.BufferedReader(io.BytesIO(data)))
+
+    def check_file_exists(self):
+        return self.file_path in self.ftp.nlst()[0]
+
+
+class LocalHandler:
+    def __init__(self, file_path):
+        self.file_path = file_path
+
+    def read_binary(self):
+        with open(self.file_path, "rb") as f:
+            return f.read()
+
+    def write_binary(self, data: bytes):
+        with open(self.file_path, "wb") as f:
+            f.write(data)
+
+    def check_file_exists(self):
+        return self.file_path.is_file()
 
 
 class JsonRecord:
-    def __init__(self, file_path: Path):
+    def __init__(self, file_path: Union[Path, str], handler):
         self.file_path = file_path
+        self.handler = handler(self.file_path)
         self.lock = Lock()
 
     def get_all_records(self):
-        if self.file_path.is_file():
-            with open(self.file_path, "rb") as f:
-                json_binary = f.read()
-                json_string = json_binary.decode()
-                records = json.loads(json_string)
-                return records
+        if self.handler.check_file_exists():
+            json_binary = self.handler.read_binary()
+            json_string = json_binary.decode()
+            records = json.loads(json_string)
+            return records
         return []
 
     def insert(self, record: dict):
@@ -26,16 +64,14 @@ class JsonRecord:
             records = self.get_all_records()
             records.append(record)
             records_binary = dict_to_binary(records)
-            with open(self.file_path, "wb") as f:
-                f.write(records_binary)
+            self.handler.write_binary(records_binary)
 
     def batch_insert(self, batch_records: List[dict]):
         with self.lock:
             records = self.get_all_records()
             records.extend(batch_records)
             records_binary = dict_to_binary(records)
-            with open(self.file_path, "wb") as f:
-                f.write(records_binary)
+            self.handler.write_binary(records_binary)
 
     def get_record_by_id(self, record_id):
         records = self.get_all_records()
@@ -55,8 +91,7 @@ class JsonRecord:
 
     def sync_records_with_file(self, records):
         records_binary = dict_to_binary(records)
-        with open(self.file_path, "wb") as f:
-            f.write(records_binary)
+        self.handler.write_binary(records_binary)
 
     def update_record_by_id(self, record_id, **kwargs):
         with self.lock:
