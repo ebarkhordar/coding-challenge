@@ -11,22 +11,6 @@ class JsonRecord:
         self.file_path = file_path
         self.lock = Lock()
 
-    def insert(self, record: dict):
-        records = self.get_all_records()
-        records.append(record)
-        records_binary = dict_to_binary(records)
-        with self.lock:
-            with open(self.file_path, "wb") as f:
-                f.write(records_binary)
-
-    def batch_insert(self, batch_records: List[dict]):
-        records = self.get_all_records()
-        records.extend(batch_records)
-        records_binary = dict_to_binary(records)
-        with self.lock:
-            with open(self.file_path, "wb") as f:
-                f.write(records_binary)
-
     def get_all_records(self):
         if self.file_path.is_file():
             with open(self.file_path, "rb") as f:
@@ -35,6 +19,22 @@ class JsonRecord:
                 records = json.loads(json_string)
                 return records
         return []
+
+    def insert(self, record: dict):
+        with self.lock:
+            records = self.get_all_records()
+            records.append(record)
+            records_binary = dict_to_binary(records)
+            with open(self.file_path, "wb") as f:
+                f.write(records_binary)
+
+    def batch_insert(self, batch_records: List[dict]):
+        with self.lock:
+            records = self.get_all_records()
+            records.extend(batch_records)
+            records_binary = dict_to_binary(records)
+            with open(self.file_path, "wb") as f:
+                f.write(records_binary)
 
     def get_record_by_id(self, record_id):
         records = self.get_all_records()
@@ -52,17 +52,28 @@ class JsonRecord:
                     selected_records.append(record)
         return selected_records
 
+    def sync_records_with_file(self, records):
+        records_binary = dict_to_binary(records)
+        with open(self.file_path, "wb") as f:
+            f.write(records_binary)
+
     def update_record_by_id(self, record_id, **kwargs):
-        records = self.get_all_records()
-        for record in records:
-            if record['id'] == record_id:
-                for k, v in kwargs.items():
-                    record[k] = v
-                return record
-        return "No record has found!"
+        with self.lock:
+            records = self.get_all_records()
+            for record in records:
+                if record['id'] == record_id:
+                    for k, v in kwargs.items():
+                        record[k] = v
+                    self.sync_records_with_file(records)
+                    return record
+            return "No record has found!"
 
     def delete_record_by_id(self, record_id):
-        with open(self.file_path, "rb") as f:
-            json_file = f.read()
-            records = self.get_all_records(json_file)
-            return records.delete(record_id)
+        with self.lock:
+            records = self.get_all_records()
+            for record in records:
+                if record['id'] == record_id:
+                    records.remove(record)
+                    self.sync_records_with_file(records)
+                    return "Record has been deleted successfully"
+            return "No record has found!"
