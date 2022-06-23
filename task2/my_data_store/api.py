@@ -116,17 +116,17 @@ class JsonRecord:
 
 
 class XMLRecord:
-    def __init__(self, file_path: Path):
+    def __init__(self, file_path: Union[Path, str], handler):
         self.file_path = file_path
+        self.handler = handler(self.file_path)
         self.lock = Lock()
 
     def get_all_records(self):
-        if self.file_path.is_file():
-            with open(self.file_path, "rb") as f:
-                xml_binary = f.read()
-                xml_string = xml_binary.decode()
-                records = xml_to_json_records(xml_string)
-                return records
+        if self.handler.check_file_exists():
+            xml_binary = self.handler.read_binary()
+            xml_string = xml_binary.decode()
+            records = xml_to_json_records(xml_string)
+            return records
         return []
 
     def insert(self, record: dict):
@@ -134,16 +134,14 @@ class XMLRecord:
             records = self.get_all_records()
             records.append(record)
             records_binary = dicttoxml(records)
-            with open(self.file_path, "wb") as f:
-                f.write(records_binary)
+            self.handler.write_binary(records_binary)
 
     def batch_insert(self, batch_records: List[dict]):
         with self.lock:
             records = self.get_all_records()
             records.extend(batch_records)
             records_binary = dicttoxml(records)
-            with open(self.file_path, "wb") as f:
-                f.write(records_binary)
+            self.handler.write_binary(records_binary)
 
     def get_record_by_id(self, record_id):
         records = self.get_all_records()
@@ -163,8 +161,7 @@ class XMLRecord:
 
     def sync_records_with_file(self, records):
         records_binary = dicttoxml(records)
-        with open(self.file_path, "wb") as f:
-            f.write(records_binary)
+        self.handler.write_binary(records_binary)
 
     def update_record_by_id(self, record_id, **kwargs):
         with self.lock:

@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 from dicttoxml import dicttoxml
 
-from my_data_store.api import XMLRecord
+from my_data_store.api import XMLRecord, LocalHandler
 from my_data_store.utils import xml_to_json_records
 
 sample_data_1 = {
@@ -51,7 +51,7 @@ def xml_record(tmp_path):
     f1 = tmp_path / "data"
     f1.mkdir()
     file_path = f1.joinpath(Path('example.xml'))
-    xml_record = XMLRecord(file_path)
+    xml_record = XMLRecord(file_path, LocalHandler)
     return xml_record
 
 

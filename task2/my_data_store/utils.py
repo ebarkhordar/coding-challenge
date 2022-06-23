@@ -12,7 +12,7 @@ def sampling(selection, offset=0, limit=None):
     return list(islice(islice(selection, offset, None), limit))
 
 
-def xml_to_json_records(xml_string):
+def xml_to_json_records(xml_string: str):
     parsed = xmltodict.parse(xml_string)
     dict_items = []
     if isinstance(parsed['root']['item'], dict):
