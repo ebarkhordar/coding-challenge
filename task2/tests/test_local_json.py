@@ -1,8 +1,6 @@
 import json
-from pathlib import Path
-
 import pytest
-
+from pathlib import Path
 from my_data_store.api import JsonRecord
 
 sample_data_1 = {
