@@ -32,3 +32,11 @@ def parse_item(item):
             key_type = eval(value['@type'])
             s_dict[key] = key_type(value['#text'])
     return s_dict
+
+
+class Reader:
+    def __init__(self):
+        self.data: bytes
+
+    def __call__(self, s):
+        self.data = s
