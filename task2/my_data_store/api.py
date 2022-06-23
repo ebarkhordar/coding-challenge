@@ -41,7 +41,7 @@ class JsonRecord:
         for record in records:
             if record['id'] == record_id:
                 return record
-        return []
+        return "No record has found!"
 
     def get_record_with_filter(self, **kwargs):
         records = self.get_all_records()
@@ -53,10 +53,13 @@ class JsonRecord:
         return selected_records
 
     def update_record_by_id(self, record_id, **kwargs):
-        with open(self.file_path, "rb") as f:
-            json_file = f.read()
-            records = self.get_all_records(json_file)
-            return records.filter(**kwargs).update(kwargs)
+        records = self.get_all_records()
+        for record in records:
+            if record['id'] == record_id:
+                for k, v in kwargs.items():
+                    record[k] = v
+                return record
+        return "No record has found!"
 
     def delete_record_by_id(self, record_id):
         with open(self.file_path, "rb") as f:
