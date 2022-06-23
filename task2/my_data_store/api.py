@@ -44,10 +44,13 @@ class JsonRecord:
         return []
 
     def get_record_with_filter(self, **kwargs):
-        with open(self.file_path, "rb") as f:
-            json_file = f.read()
-            records = self.get_all_records(json_file)
-            return records.filter(**kwargs)
+        records = self.get_all_records()
+        selected_records = []
+        for record in records:
+            for k, v in kwargs.items():
+                if record[k] == v:
+                    selected_records.append(record)
+        return selected_records
 
     def update_record_by_id(self, record_id, **kwargs):
         with open(self.file_path, "rb") as f:
