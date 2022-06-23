@@ -1,8 +1,9 @@
 import json
+from itertools import islice
 from pathlib import Path
 from typing import List
 
-from my_data_store.utils import dict_to_binary
+from my_data_store.utils import dict_to_binary, sampling
 from threading import Lock
 
 
@@ -43,14 +44,14 @@ class JsonRecord:
                 return record
         return "No record has found!"
 
-    def get_record_with_filter(self, **kwargs):
+    def get_record_with_filter(self, limit=5, offset=0, **kwargs):
         records = self.get_all_records()
         selected_records = []
         for record in records:
             for k, v in kwargs.items():
                 if record[k] == v:
                     selected_records.append(record)
-        return selected_records
+        return sampling(selected_records, offset, limit)
 
     def sync_records_with_file(self, records):
         records_binary = dict_to_binary(records)

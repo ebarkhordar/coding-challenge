@@ -74,8 +74,30 @@ def test_query_records_with_filters(json_record):
     with open(json_record.file_path, 'w') as file:
         json_data = json.dumps([sample_data_1, sample_data_2, sample_data_3, sample_data_4])
         file.write(json_data)
-    record = json_record.get_record_with_filter(color='red')
-    assert record == [sample_data_1, sample_data_2]
+    records = json_record.get_record_with_filter(color='red')
+    assert records == [sample_data_1, sample_data_2]
+
+
+def test_query_records_with_filters_offset_and_limit(json_record):
+    data_list = []
+    for i in range(1, 100):
+        record = {
+            "id": i,
+        }
+        if i % 3 == 0:
+            record['color'] = 'red'
+        elif i % 3 == 1:
+            record['color'] = 'orange'
+        elif i % 3 == 2:
+            record['color'] = 'blue'
+        data_list.append(record)
+    with open(json_record.file_path, 'w') as file:
+        json_data = json.dumps(data_list)
+        file.write(json_data)
+    records = json_record.get_record_with_filter(limit=10, color='red')
+    assert len(records) == 10
+    records = json_record.get_record_with_filter(limit=2, offset=1, color='orange')
+    assert records == [{'id': 4, 'color': 'orange'}, {'id': 7, 'color': 'orange'}]
 
 
 def test_update_record_by_id(json_record):
