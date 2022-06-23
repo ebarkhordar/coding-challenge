@@ -1,46 +1,62 @@
-import io
-from ftplib import FTP
-from pathlib import Path
 import json
-import dicttoxml
+from pathlib import Path
+from typing import List
+
+from my_data_store.utils import dict_to_binary
 from threading import Lock
 
-from my_data_store.settings import Settings
 
-
-def dict_to_binary(the_dict):
-    str = json.dumps(the_dict)
-    return str.encode()
-
-
-class InsertRecord:
-    def __init__(self, data, file_format, destination):
-        self.data = data
-        self.file_format = file_format
-        self.destination = destination
+class JsonRecord:
+    def __init__(self, file_path: Path):
+        self.file_path = file_path
         self.lock = Lock()
 
-    def save(self):
-        data, mode, file_name = self.get_file()
-        if self.destination == 'local drive':
-            with self.lock:
-                with open(file_name, "wb") as f:
-                    f.write(data)
-        elif self.destination == 'ftp':
-            ftp_conf = (Settings.FTP_HOSTNAME, Settings.FTP_USERNAME, Settings.FTP_PASSWORD)
-            with FTP(*ftp_conf) as ftp:
-                ftp.storbinary(f"STOR {file_name}", io.BufferedReader(io.BytesIO(data)))
+    def insert(self, record: dict):
+        records = self.get_all_records()
+        records.append(record)
+        records_binary = dict_to_binary(records)
+        with self.lock:
+            with open(self.file_path, "wb") as f:
+                f.write(records_binary)
 
-    def get_file(self):
-        if self.file_format == 'json':
-            return dict_to_binary(self.data), 'a+', 'file.json'
-        elif self.file_format == 'xml':
-            return dicttoxml.dicttoxml(self.data), 'wb', 'file.xml'
-        elif self.file_format == 'binary':
-            return dict_to_binary(self.data), 'wb', 'file.bin'
+    def batch_insert(self, batch_records: List[dict]):
+        records = self.get_all_records()
+        records.extend(batch_records)
+        records_binary = dict_to_binary(records)
+        with self.lock:
+            with open(self.file_path, "wb") as f:
+                f.write(records_binary)
 
+    def get_all_records(self):
+        if self.file_path.is_file():
+            with open(self.file_path, "rb") as f:
+                json_binary = f.read()
+                json_string = json_binary.decode()
+                records = json.loads(json_string)
+                return records
+        return []
 
-    def get_last_json_data(self, file_path):
-        with open(file_path, "r") as jsonFile:
-            data = json.load(jsonFile)
-            return data
+    def get_record_by_id(self, record_id):
+        records = self.get_all_records()
+        for record in records:
+            if record['id'] == record_id:
+                return record
+        return []
+
+    def get_record_with_filter(self, **kwargs):
+        with open(self.file_path, "rb") as f:
+            json_file = f.read()
+            records = self.get_all_records(json_file)
+            return records.filter(**kwargs)
+
+    def update_record_by_id(self, record_id, **kwargs):
+        with open(self.file_path, "rb") as f:
+            json_file = f.read()
+            records = self.get_all_records(json_file)
+            return records.filter(**kwargs).update(kwargs)
+
+    def delete_record_by_id(self, record_id):
+        with open(self.file_path, "rb") as f:
+            json_file = f.read()
+            records = self.get_all_records(json_file)
+            return records.delete(record_id)
