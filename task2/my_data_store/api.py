@@ -60,6 +60,8 @@ class JsonRecord:
         return []
 
     def insert(self, record: dict):
+        if isinstance(record, list):
+            raise Exception("Use batch insertion for more than one record")
         with self.lock:
             records = self.get_all_records()
             records.append(record)
@@ -130,6 +132,8 @@ class XMLRecord:
         return []
 
     def insert(self, record: dict):
+        if isinstance(record, list):
+            raise Exception("Use batch insertion for more than one record")
         with self.lock:
             records = self.get_all_records()
             records.append(record)

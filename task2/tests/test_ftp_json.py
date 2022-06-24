@@ -55,21 +55,21 @@ def read_file_ftp(file_path):
 
 
 def test_insert(json_record):
-    ftp.delete(json_record.file_path)
     json_record.insert(record=sample_data_1)
     res = read_file_ftp(json_record.file_path)
     json_data = json.loads(res)
     assert json_data == [sample_data_1]
     assert len(json_data) == 1
+    ftp.delete(json_record.file_path)
 
 
 def test_batch_insert(json_record):
-    ftp.delete(json_record.file_path)
     json_record.batch_insert(batch_records=[sample_data_1, sample_data_2])
     res = read_file_ftp(json_record.file_path)
     json_data = json.loads(res)
     assert json_data == [sample_data_1, sample_data_2]
     assert len(json_data) == 2
+    ftp.delete(json_record.file_path)
 
 
 def test_query_record(json_record):
@@ -79,6 +79,7 @@ def test_query_record(json_record):
     assert record == sample_data_3
     record = json_record.get_record_by_id(record_id=31)
     assert record == "No record has found!"
+    ftp.delete(json_record.file_path)
 
 
 def test_query_records_with_filters(json_record):
@@ -86,6 +87,7 @@ def test_query_records_with_filters(json_record):
     ftp.storbinary(f"STOR {json_record.file_path}", io.BufferedReader(io.BytesIO(records_binary)))
     records = json_record.get_record_with_filter(color='red')
     assert records == [sample_data_1, sample_data_2]
+    ftp.delete(json_record.file_path)
 
 
 def test_query_records_with_filters_offset_and_limit(json_record):
@@ -107,6 +109,7 @@ def test_query_records_with_filters_offset_and_limit(json_record):
     assert len(records) == 10
     records = json_record.get_record_with_filter(limit=2, offset=1, color='orange')
     assert records == [{'id': 4, 'color': 'orange'}, {'id': 7, 'color': 'orange'}]
+    ftp.delete(json_record.file_path)
 
 
 def test_update_record_by_id(json_record):
@@ -125,6 +128,7 @@ def test_update_record_by_id(json_record):
     json_data = json.loads(res)
     assert json_data == [sample_data_1, sample_data_2, sample_data_3, updated_sample_data_4]
     assert len(json_data) == 4
+    ftp.delete(json_record.file_path)
 
 
 def test_delete_record_by_id(json_record):
@@ -136,3 +140,4 @@ def test_delete_record_by_id(json_record):
     json_data = json.loads(res)
     assert json_data == [sample_data_1, sample_data_2, sample_data_4]
     assert len(json_data) == 3
+    ftp.delete(json_record.file_path)
