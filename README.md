@@ -15,4 +15,14 @@ There are 2 main tasks here:
    * Record query/retrieval
    * Query filters (equality operations only), limit & offset
    * Update and delete operations
-   
+
+## Quick start
+Task 1: 
+   1. Run `poetry install`
+   1. Run `poetry shell`
+   2. Run `pytest task1/tests`
+
+Task 2:
+   1. Run `cd task2`
+   1. Run `poetry install`
+   2. Run `pytest build`

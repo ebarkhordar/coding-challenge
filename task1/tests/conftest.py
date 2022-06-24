@@ -1,6 +1,6 @@
 import pytest
 
-from task1.tests.interface import StackDataStructure
+from tests.interface import StackDataStructure
 
 
 @pytest.fixture
